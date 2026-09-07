@@ -1,0 +1,68 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { resourceTypes, typeMeta, type ResourceType } from '../../lib/resources';
+
+export async function getStaticPaths() {
+  const groups = await Promise.all(
+    resourceTypes.map(async (type) => {
+      const entries = await getCollection(type);
+      return entries.map((entry) => ({ params: { type, id: entry.id.replace(/\.(md|mdx)$/, '') }, props: { entry, type } }));
+    }),
+  );
+  return groups.flat();
+}
+
+const { entry, type } = Astro.props as { entry: any; type: ResourceType };
+const { Content } = await render(entry);
+const meta = typeMeta[type];
+---
+
+<BaseLayout title={`${entry.data.title} · ${meta.label}`} description={entry.data.description}>
+  <div class="detail shell">
+    <aside class="detail-rail">
+      <a class="breadcrumb" href={`/${type}`}>← {meta.label}</a>
+      <div class={`detail-mark type-${type}`}>{meta.mark}</div>
+      <div class="detail-index">
+        <span>类型</span><strong>{meta.singular}</strong>
+        <span>分类</span><strong>{entry.data.category}</strong>
+        <span>作者</span><strong>{entry.data.author}</strong>
+        <span>更新</span><strong>{entry.data.updatedAt.toLocaleDateString('zh-CN')}</strong>
+      </div>
+    </aside>
+
+    <article class="detail-main">
+      <header class="detail-header">
+        <div class="tag-row">{entry.data.tags.map((tag: string) => <span>#{tag}</span>)}</div>
+        <h1>{entry.data.title}</h1>
+        <p>{entry.data.description}</p>
+        <div class="detail-actions">
+          <button class="copy-button" type="button" data-copy-content>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="10" height="10" rx="2"/><path d="M4 13H3a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></svg>
+            <span>复制正文</span>
+          </button>
+          {entry.data.source && <a class="source-button" href={entry.data.source} target="_blank" rel="noreferrer">查看来源 ↗</a>}
+        </div>
+      </header>
+      <div class="prose" data-resource-content>
+        <Content />
+      </div>
+    </article>
+  </div>
+</BaseLayout>
+
+<script>
+  const button = document.querySelector<HTMLButtonElement>('[data-copy-content]');
+  const content = document.querySelector<HTMLElement>('[data-resource-content]');
+  button?.addEventListener('click', async () => {
+    if (!content) return;
+    await navigator.clipboard.writeText(content.innerText.trim());
+    const label = button.querySelector('span');
+    if (label) label.textContent = '已复制';
+    button.classList.add('is-copied');
+    window.setTimeout(() => {
+      if (label) label.textContent = '复制正文';
+      button.classList.remove('is-copied');
+    }, 1600);
+  });
+</script>

@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ResourceGrid from '../components/ResourceGrid.astro';
+import { getAllResources, resourceTypes, typeMeta } from '../lib/resources';
+
+const resources = await getAllResources();
+const counts = Object.fromEntries(resourceTypes.map((type) => [type, resources.filter((item) => item.type === type).length]));
+---
+
+<BaseLayout>
+  <section class="hero shell">
+    <div class="eyebrow"><span></span> CURATED AGENTIC LIBRARY</div>
+    <h1>让好方法，<br /><em>可以被重复使用。</em></h1>
+    <p class="hero-copy">我在这里整理经过实践的 Skills、Prompts、工作流与审美判断。少一点概念，多一点可以直接拿走的东西。</p>
+    <div class="type-overview" aria-label="资源分类">
+      {resourceTypes.map((type, index) => (
+        <a href={`/${type}`}>
+          <span class="overview-index">0{index + 1}</span>
+          <strong>{typeMeta[type].label}</strong>
+          <span class="overview-description">{typeMeta[type].description}</span>
+          <span class="overview-count">{counts[type].toString().padStart(2, '0')}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <div class="shell">
+    <ResourceGrid resources={resources} />
+  </div>
+</BaseLayout>
