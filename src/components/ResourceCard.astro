@@ -1,0 +1,53 @@
+---
+import { resourceHref, type ResourceType, typeMeta } from '../lib/resources';
+
+interface Props {
+  entry: {
+    id: string;
+    type: ResourceType;
+    data: {
+      title: string;
+      description: string;
+      category: string;
+      tags: string[];
+      author: string;
+      updatedAt: Date;
+      featured: boolean;
+    };
+  };
+}
+
+const { entry } = Astro.props;
+const meta = typeMeta[entry.type];
+const searchText = [entry.data.title, entry.data.description, entry.data.category, ...entry.data.tags]
+  .join(' ')
+  .toLowerCase();
+---
+
+<article
+  class="resource-card"
+  data-resource-card
+  data-type={entry.type}
+  data-category={entry.data.category}
+  data-search={searchText}
+>
+  <a class="card-link" href={resourceHref(entry.type, entry.id)} aria-label={`查看 ${entry.data.title}`}>
+    <div class="card-topline">
+      <span class={`type-mark type-${entry.type}`} aria-hidden="true">{meta.mark}</span>
+      <span class="type-label">{meta.singular}</span>
+      {entry.data.featured && <span class="featured-label">精选</span>}
+      <svg class="card-arrow" viewBox="0 0 20 20" aria-hidden="true"><path d="m7 14 7-7M8 7h6v6" /></svg>
+    </div>
+    <h2>{entry.data.title}</h2>
+    <p>{entry.data.description}</p>
+    <div class="tag-row">
+      {entry.data.tags.slice(0, 3).map((tag) => <span>#{tag}</span>)}
+    </div>
+    <div class="card-meta">
+      <span>{entry.data.author}</span>
+      <time datetime={entry.data.updatedAt.toISOString()}>
+        {entry.data.updatedAt.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short' })}
+      </time>
+    </div>
+  </a>
+</article>

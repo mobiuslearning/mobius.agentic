@@ -1,0 +1,120 @@
+---
+import ResourceCard from './ResourceCard.astro';
+import type { ResourceType } from '../lib/resources';
+
+interface Props {
+  resources: Array<any>;
+  initialType?: ResourceType | 'all';
+  showTypeFilters?: boolean;
+}
+
+const { resources, initialType = 'all', showTypeFilters = true } = Astro.props;
+const categories = [...new Set(resources.map((item) => item.data.category))].sort();
+---
+
+<section class="library" data-resource-library data-initial-type={initialType}>
+  <div class="library-tools">
+    <label class="search-box">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5" /><path d="m13 13 4 4" /></svg>
+      <span class="sr-only">搜索资源</span>
+      <input type="search" placeholder="搜索标题、描述或标签…" autocomplete="off" data-search-input />
+      <kbd>⌘ K</kbd>
+    </label>
+    {showTypeFilters && (
+      <div class="filter-group" aria-label="按类型筛选">
+        <button class="filter-button is-active" type="button" data-type-filter="all">全部</button>
+        <button class="filter-button" type="button" data-type-filter="skills">Skills</button>
+        <button class="filter-button" type="button" data-type-filter="prompts">Prompts</button>
+        <button class="filter-button" type="button" data-type-filter="workflows">工作流</button>
+        <button class="filter-button" type="button" data-type-filter="taste">Taste</button>
+      </div>
+    )}
+  </div>
+
+  <div class="category-filters" aria-label="按分类筛选">
+    <button class="category-button is-active" type="button" data-category-filter="all">全部分类</button>
+    {categories.map((category) => (
+      <button class="category-button" type="button" data-category-filter={category}>{category}</button>
+    ))}
+  </div>
+
+  <div class="results-line" aria-live="polite">
+    <span data-result-count>{resources.length} 个资源</span>
+    <span class="results-rule"></span>
+  </div>
+
+  <div class="resource-grid">
+    {resources.map((entry) => <ResourceCard entry={entry} />)}
+  </div>
+
+  <div class="empty-state" data-empty-state hidden>
+    <span>∅</span>
+    <h2>没有找到匹配的内容</h2>
+    <p>换个关键词，或清除筛选条件再试试。</p>
+    <button type="button" data-clear-filters>清除筛选</button>
+  </div>
+</section>
+
+<script>
+  function initLibrary(root: HTMLElement) {
+    const input = root.querySelector<HTMLInputElement>('[data-search-input]');
+    const cards = [...root.querySelectorAll<HTMLElement>('[data-resource-card]')];
+    const count = root.querySelector<HTMLElement>('[data-result-count]');
+    const empty = root.querySelector<HTMLElement>('[data-empty-state]');
+    const typeButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-type-filter]')];
+    const categoryButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-category-filter]')];
+    let type = root.dataset.initialType || 'all';
+    let category = 'all';
+
+    const update = () => {
+      const query = input?.value.trim().toLowerCase() || '';
+      let visible = 0;
+      cards.forEach((card) => {
+        const matches =
+          (type === 'all' || card.dataset.type === type) &&
+          (category === 'all' || card.dataset.category === category) &&
+          (!query || card.dataset.search?.includes(query));
+        card.hidden = !matches;
+        if (matches) visible += 1;
+      });
+      if (count) count.textContent = `${visible} 个资源`;
+      if (empty) empty.hidden = visible > 0;
+    };
+
+    typeButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        type = button.dataset.typeFilter || 'all';
+        typeButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+        update();
+      });
+    });
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        category = button.dataset.categoryFilter || 'all';
+        categoryButtons.forEach((item) => item.classList.toggle('is-active', item === button));
+        update();
+      });
+    });
+
+    input?.addEventListener('input', update);
+    root.querySelector('[data-clear-filters]')?.addEventListener('click', () => {
+      type = root.dataset.initialType || 'all';
+      category = 'all';
+      if (input) input.value = '';
+      typeButtons.forEach((item) => item.classList.toggle('is-active', item.dataset.typeFilter === type));
+      categoryButtons.forEach((item) => item.classList.toggle('is-active', item.dataset.categoryFilter === 'all'));
+      update();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        input?.focus();
+      }
+    });
+    update();
+  }
+
+  document.querySelectorAll<HTMLElement>('[data-resource-library]').forEach(initLibrary);
+</script>

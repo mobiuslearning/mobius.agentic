@@ -1,0 +1,56 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'Agentic · Mobius',
+  description = 'Mobius 的 Agentic 资源库：Skills、Prompts、工作流与 Taste。',
+} = Astro.props;
+const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#f6f7fb" />
+    {canonical && <link rel="canonical" href={canonical} />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell header-inner">
+        <a class="brand" href="/" aria-label="Agentic 首页">
+          <span class="brand-mark" aria-hidden="true">∞</span>
+          <span>mobius<span class="brand-dot">.</span>agentic</span>
+        </a>
+        <nav class="primary-nav" aria-label="主导航">
+          <a href="/skills">Skills</a>
+          <a href="/prompts">Prompts</a>
+          <a href="/workflows">工作流</a>
+          <a href="/taste">Taste</a>
+        </nav>
+        <a class="back-link" href="https://www.mobius.cool/" rel="home">
+          返回博客
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" /></svg>
+        </a>
+      </div>
+    </header>
+    <main>
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="shell footer-inner">
+        <span>© {new Date().getFullYear()} Mobius</span>
+        <span>持续整理真正有用的 Agentic 实践。</span>
+      </div>
+    </footer>
+  </body>
+</html>
